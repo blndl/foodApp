@@ -1,0 +1,25 @@
+services:
+  postgres:
+    image: postgres:15
+    container_name: userdb
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: userDataDB
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  backend:
+    build: ./server
+    container_name: server
+    environment:
+      - DATABASE_URL=postgresql://admin:password@postgres:5432/userDataDB
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+
+volumes:
+  pgdata:
