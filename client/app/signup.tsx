@@ -10,7 +10,7 @@ export default function Signup() {
 
   const onSubmit = async (data: any) => {
     try {
-        const response = await axios.post('http://10.60.180.125/8080/signup', data);
+        const response = await axios.post('http://192.168.1.177/8080/signup', data);
         if (response.status === 200) {
           router.push('/login');
         }

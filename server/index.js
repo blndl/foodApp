@@ -13,6 +13,8 @@ app.use(express.json());
 app.post('/login', async (req, res) => {
     const { username, password } = req.body;
     
+    console.log(' /login route was hit');
+
     if (!username || !password ) {
       return res.status(400).json({ message: 'Missing required fields' });
     }
@@ -28,15 +30,17 @@ app.post('/login', async (req, res) => {
       }
 
     res.status(200).json({ message: 'Login successful!' });
-  } catch (error) {
-    console.error('Error during login:', error);
-    res.status(500).json({ message: 'Internal server error' });
-  }
+    } catch (error) {
+      console.error('Error during login:', error);
+      res.status(500).json({ message: 'Internal server error' });
+    }
+
   });
 
-app.post('signup', async (req, res) => {
+app.post('/signup', async (req, res) => {
   const { username, password } = req.body;
 
+  console.log(' /signup route was hit');
   if (!username || !password) {
     return res.status(400).json({ message: 'Missing required fields' });
   }
@@ -55,6 +59,8 @@ app.post('signup', async (req, res) => {
     console.error('Error during signup:', error);
     res.status(500).json({ message: 'Internal server error' });
   }
+
+
 });
 
 
@@ -81,6 +87,6 @@ app.get('/initdb', async (req, res) => {
   });
 //route should never be accessed outside of development
 
-app.listen(port, () => {
+app.listen(port, '0.0.0.0', () => {
     console.log('server listening on port 8080')
 })

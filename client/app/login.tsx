@@ -10,7 +10,7 @@ export default function Login() {
 
   const onSubmit = async (data: any) => {
     try {
-        const response = await axios.post('http://192.168.x.x:8080/login', data);
+        const response = await axios.post('http://192.168.1.177:8080/login', data);
         if (response.status === 200) {
           router.push('/home');
         }
