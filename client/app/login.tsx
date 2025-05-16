@@ -10,11 +10,16 @@ export default function Login() {
 
   const onSubmit = async (data: any) => {
     try {
-        const response = await axios.post('http://192.168.1.177:8080/login', data);
-        if (response.status === 200) {
+        console.log('📡 Sending signup request:', data);
+        const response = await axios.post('https://jsonplaceholder.typicode.com/posts', {
+          title: 'test',
+          body: 'This is a test'
+        });//await axios.post('http://192.168.1.177:8080/login', data);
+        /*if (response.status === 200) {
           router.push('/home');
-        }
+        }*/
       } catch (error) {
+        console.log('❌ Signup failed');
         Alert.alert('Login Failed', 'Invalid credentials');
       }
     };

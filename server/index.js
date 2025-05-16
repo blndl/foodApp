@@ -38,9 +38,10 @@ app.post('/login', async (req, res) => {
   });
 
 app.post('/signup', async (req, res) => {
+  console.log(' /signup route was hit');
   const { username, password } = req.body;
 
-  console.log(' /signup route was hit');
+
   if (!username || !password) {
     return res.status(400).json({ message: 'Missing required fields' });
   }

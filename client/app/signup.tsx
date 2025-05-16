@@ -10,13 +10,19 @@ export default function Signup() {
 
   const onSubmit = async (data: any) => {
     try {
-        const response = await axios.post('http://192.168.1.177/8080/signup', data);
-        if (response.status === 200) {
+      console.log('📡 Sending signup request:', data);
+      const response = await axios.post('http://192.168.1.177:8080/signup', data);
+      if (response.status === 201) 
+        {
+          console.log("truc")
           router.push('/login');
         }
-      } catch (error) {
-        Alert.alert('signup Failed', 'Invalid credentials');
       }
+    catch (error: any) {
+      console.log('❌ Signup failed');
+      console.error('Signup error:', error.message);
+      Alert.alert('Signup Failed', error.message);
+    }
     };
 
   return (
