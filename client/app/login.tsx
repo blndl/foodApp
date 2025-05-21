@@ -1,8 +1,12 @@
-import { View, Text, TextInput, Button, StyleSheet, SafeAreaView, Alert } from 'react-native';
-import React, { useState } from 'react';
+import { View, Text, TextInput, Button, StyleSheet, SafeAreaView, Alert, TouchableOpacity } from 'react-native';
+import React from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { useRouter } from 'expo-router';
 import axios from 'axios';
+//import * as SecureStore from 'expo-secure-store';
+import axiosInstance from './axiosInstance';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 
 export default function Login() {
   const { control, handleSubmit, formState: { errors } } = useForm();
@@ -10,24 +14,41 @@ export default function Login() {
 
   const onSubmit = async (data: any) => {
     try {
-        console.log('📡 Sending signup request:', data);
-        const response = await axios.post('https://jsonplaceholder.typicode.com/posts', {
-          title: 'test',
-          body: 'This is a test'
-        });//await axios.post('http://192.168.1.177:8080/login', data);
-        /*if (response.status === 200) {
+      console.log(data)
+
+      const response = await axios.post('http://localhost:8080/login', data);
+      console.log(response)
+      if (response.status === 200) {
+        const { accessToken, refreshToken, userId } = response.data;
+
+        if (userId) {
+          await saveTokens(accessToken, refreshToken);
+          await AsyncStorage.setItem('userId', userId.toString());
+          console.log("User ID saved:", userId);
+  
           router.push('/home');
-        }*/
-      } catch (error) {
-        console.log('❌ Signup failed');
-        Alert.alert('Login Failed', 'Invalid credentials');
+        } else {
+          console.error("userId is missing from the login response");
+        }
       }
-    };
+    } catch (error) {
+      Alert.alert('Login Failed', 'Invalid credentials');
+    }
+  };
+  const saveTokens = async (accessToken: string, refreshToken: string) => {
+    try {
+      await AsyncStorage.setItem('access_token', accessToken);
+      await AsyncStorage.setItem('refresh_token', refreshToken);
+      console.log("Tokens saved successfully");
+    } catch (error) {
+      console.error("Error storing tokens:", error);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
-      <View>
-        <Text>Username</Text>
+      <View style={{ backgroundColor: 'white' }}>
+        <Text>email</Text>
         <Controller
           control={control}
           render={({ field: { onChange, onBlur, value } }) => (
@@ -38,10 +59,10 @@ export default function Login() {
               value={value}
             />
           )}
-          name="username"
-          rules={{ required: true, }}
+          name="email"
+          rules={{ required: true }}
         />
-        {errors.username && <Text style={styles.errorText}>Username required</Text>}
+        {errors.email && <Text style={styles.errorText}>emailrequired</Text>}
 
         <Text>Password</Text>
         <Controller
@@ -55,9 +76,9 @@ export default function Login() {
             />
           )}
           name="password"
-          rules={{ required: true, }}
+          rules={{ required: true }}
         />
-        {errors.username && <Text style={styles.errorText}>Username required</Text>}
+        {errors.password && <Text style={styles.errorText}>Password required</Text>}
 
         <Button title="Submit" onPress={handleSubmit(onSubmit)} />
       </View>
@@ -81,5 +102,14 @@ const styles = StyleSheet.create({
   errorText: {
     color: 'red',
     marginBottom: 10,
+  },
+  closeButton: {
+    position: 'absolute',
+    top: 50,
+    right: 20,
+    zIndex: 1,
+  },
+  closeText: {
+    fontSize: 24,
   },
 });
