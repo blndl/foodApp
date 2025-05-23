@@ -8,7 +8,7 @@ const axiosInstance = axios.create({
 
 axiosInstance.interceptors.request.use(
   async (config) => {
-    const accessToken = await AsyncStorage.getItem('access_token');
+    const accessToken = await AsyncStorage.getItem('accessToken');
     console.log('accessToken:', accessToken);
     if (accessToken) {
       config.headers['Authorization'] = `Bearer ${accessToken}`;
@@ -26,20 +26,20 @@ axiosInstance.interceptors.response.use(
     if (error.response && error.response.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
 
-      const refreshToken = await AsyncStorage.getItem('refresh_token');
+      const refreshToken = await AsyncStorage.getItem('refreshToken');
       
       if (!refreshToken) {
         return Promise.reject(error);
       }
 
       try {
-        const refreshResponse = await axios.post('http://localhost:8080/refresh-token', { refresh_token: refreshToken });
-        const { access_token, refresh_token } = refreshResponse.data;
+        const refreshResponse = await axios.post('http://localhost:8080/refresh-token', { refreshToken: refreshToken });
+        const { accessToken, refreshtoken } = refreshResponse.data;
 
-        await AsyncStorage.setItem('access_token', access_token);
-        await AsyncStorage.setItem('refresh_token', refresh_token);
+        await AsyncStorage.setItem('accessToken', accessToken);
+        await AsyncStorage.setItem('refreshToken', refreshToken);
 
-        originalRequest.headers['Authorization'] = `Bearer ${access_token}`;
+        originalRequest.headers['Authorization'] = `Bearer ${accessToken}`;
         return axiosInstance(originalRequest);
       } catch (refreshError) {
         console.error('Token refresh failed:', refreshError);

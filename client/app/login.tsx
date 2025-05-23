@@ -14,34 +14,31 @@ export default function Login() {
 
   const onSubmit = async (data: any) => {
     try {
-      console.log(data)
+      console.log('Login form data:', data);
 
       const response = await axios.post('http://localhost:8080/login', data);
-      console.log(response)
-      if (response.status === 200) {
-        const { accessToken, refreshToken, userId } = response.data;
+      console.log('Login response:', response.data);
 
-        if (userId) {
-          await saveTokens(accessToken, refreshToken);
-          await AsyncStorage.setItem('userId', userId.toString());
-          console.log("User ID saved:", userId);
-  
-          router.push('/home');
-        } else {
-          console.error("userId is missing from the login response");
-        }
+      const { accessToken, refreshToken, userId } = response.data;
+
+      if (!accessToken || !refreshToken || !userId) {
+        console.error('Missing token or userId in response:', response.data);
+        Alert.alert('Login Failed', 'Invalid server response');
+        return;
       }
-    } catch (error) {
-      Alert.alert('Login Failed', 'Invalid credentials');
-    }
-  };
-  const saveTokens = async (accessToken: string, refreshToken: string) => {
-    try {
-      await AsyncStorage.setItem('access_token', accessToken);
-      await AsyncStorage.setItem('refresh_token', refreshToken);
-      console.log("Tokens saved successfully");
-    } catch (error) {
-      console.error("Error storing tokens:", error);
+
+      await AsyncStorage.setItem('accessToken', accessToken);
+      await AsyncStorage.setItem('refreshToken', refreshToken);
+      await AsyncStorage.setItem('userId', userId.toString());
+
+      console.log('Access Token saved:', accessToken);
+      console.log('Refresh Token saved:', refreshToken);
+      console.log('User ID saved:', userId);
+
+      router.push('/home');
+    } catch (error: any) {
+      console.error('Login error:', error?.response?.data || error.message);
+      Alert.alert('Login Failed', 'Invalid credentials or server error');
     }
   };
 
