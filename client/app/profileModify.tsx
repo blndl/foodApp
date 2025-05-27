@@ -53,7 +53,7 @@ export default function ProfileModify() {
 
   const handleSubmit = async () => {
     try {
-      await axiosInstance.put(`/profiles/${profileId}`, {
+      await axiosInstance.put(`/update/profile/${profileId}`, {
         profileName: profile.profileName,
         age: Number(profile.age),
         gender: profile.gender,

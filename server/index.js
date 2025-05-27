@@ -220,6 +220,48 @@ app.delete('/delete/profile/:profileId', authenticateJWT, async (req, res) => {
   }
 });
 
+app.put('/update/profile/:profileId', authenticateJWT, async (req, res) => {
+  const { profileId } = req.params;
+  const userIdFromToken = req.user.id;
+  console.log('User ID from token:', userIdFromToken);
+  const {
+    profileName,
+    age,
+    gender,
+    height,
+    weight,
+    activityLevel,
+    objective,
+    diet
+  } = req.body;
+
+  try {
+    const profile = await db.oneOrNone('SELECT * FROM profiles WHERE id = $1 AND "userId" = $2', [profileId, userIdFromToken]);
+
+    if (!profile) {
+      return res.status(404).json({ message: 'Profile not found or not authorized' });
+    }
+
+    await db.none(
+      `UPDATE profiles SET 
+         "profileName" = $1,
+         age = $2,
+         gender = $3,
+         height = $4,
+         weight = $5,
+         "activityLevel" = $6,
+         objective = $7,
+         diet = $8
+       WHERE id = $9`,
+      [profileName, age, gender, height, weight, activityLevel, objective, diet, profileId]
+    );
+
+    res.status(200).json({ message: 'Profile updated successfully' });
+  } catch (error) {
+    console.error('Error updating profile:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
 
 //for development only
 app.get('/initkey', async (req, res) => {
