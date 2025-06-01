@@ -2,7 +2,7 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import Profile from './profile';
-//import Activity from './Activity';
+import Ingredients from './ingredients';
 //import Diet from './Diet';
 import Settings from './settings';
 import { NavigationContainer } from '@react-navigation/native';
@@ -14,11 +14,11 @@ const TabLayout = () => {
       <Tab.Navigator
         screenOptions={({ route }) => ({
           tabBarIcon: ({ focused, color, size }) => {
-            let iconName;
+            let iconName = '';
             if (route.name === 'Profile') {
               iconName = focused ? 'person' : 'person-outline';
-            //} else if (route.name === 'Activity') {
-              //iconName = focused ? 'fitness' : 'fitness-outline';
+            } else if (route.name === 'Ingredients') {
+              iconName = focused ? 'fish' : 'fish-outline';
             //} else if (route.name === 'Diet') {
               //iconName = focused ? 'restaurant' : 'restaurant-outline';
             } else if (route.name === 'Settings') {
@@ -30,6 +30,7 @@ const TabLayout = () => {
         })}
       >
         <Tab.Screen name="Profile" component={Profile} />
+        <Tab.Screen name="Ingredients" component={Ingredients} />
         <Tab.Screen name="Settings" component={Settings} />
       </Tab.Navigator>
   );

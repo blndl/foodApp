@@ -1,43 +1,62 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useState, useCallback } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { useRouter, useFocusEffect } from 'expo-router';
 import axiosInstance from './../axiosInstance';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function ProfilePage() {
-  const { profileId } = useLocalSearchParams();
   const router = useRouter();
-
+  const [profileId, setProfileId] = useState<number | null>(null);
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchProfile = async () => {
-      if (!profileId) {
-        setError('Profile ID is missing');
-        setLoading(false);
+  const fetchProfile = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const storedProfileId = await AsyncStorage.getItem('profileId');
+      if (!storedProfileId) {
+        Alert.alert('Error', 'No profile ID found. Please log in again.');
+        router.replace('/home');
         return;
       }
-
-      try {
-        const response = await axiosInstance.get(`/get/profile/${profileId}`);
-        setProfile(response.data);
-      } catch (err) {
-        setError('Failed to fetch profile data');
-        console.error(err);
-      } finally {
-        setLoading(false);
+      const parsedProfileId = parseInt(storedProfileId);
+      if (isNaN(parsedProfileId)) {
+        Alert.alert('Error', 'Invalid profile ID found. Please log in again.');
+        router.replace('/home');
+        return;
       }
-    };
+      setProfileId(parsedProfileId);
 
-    fetchProfile();
-  }, [profileId]);
+      const response = await axiosInstance.get(`get/profile/${parsedProfileId}`);
+      if (response.status === 200) {
+        setProfile(response.data);
+      } else {
+        setError('Profile not found');
+      }
+    } catch (err) {
+      console.error('Error fetching profile:', err);
+      Alert.alert('Error', 'Failed to fetch profile data.');
+      setError('Failed to fetch profile data');
+    } finally {
+      setLoading(false);
+    }
+  }, [router]);
+  
+  useFocusEffect(
+    useCallback(() => {
+      fetchProfile();
+    }, [fetchProfile])
+  );
 
   const handleLogout = async () => {
     try {
-      router.replace('..');
+      await AsyncStorage.removeItem('profileId');
+      router.replace('/login');
     } catch (error) {
       console.error('Logout failed:', error);
+      Alert.alert('Error', 'Logout failed. Please try again.');
     }
   };
 
@@ -53,6 +72,9 @@ export default function ProfilePage() {
     return (
       <View style={styles.container}>
         <Text style={{ color: 'red' }}>{error}</Text>
+        <TouchableOpacity onPress={() => router.replace('/home')}>
+          <Text style={{ color: 'blue', marginTop: 10 }}>Go Back Home</Text>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -60,7 +82,7 @@ export default function ProfilePage() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Hello {profile?.profileName}</Text>
+        <Text style={styles.title}>Hello, {profile?.profileName || 'User'}</Text>
         <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
           <Text style={styles.logoutText}>Logout</Text>
         </TouchableOpacity>
@@ -81,6 +103,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, padding: 20, backgroundColor: '#fff' },
   header: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    marginBottom: 20,
   },
   title: { fontSize: 24, fontWeight: 'bold' },
   logoutButton: {
