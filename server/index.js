@@ -5,7 +5,7 @@ const jwt = require('jsonwebtoken');
 const fs = require('fs');
 const crypto = require('crypto');
 const path = require('path');
-
+const xlsx = require('xlsx');
 const app = express();
 const port = 8080
 
@@ -263,6 +263,16 @@ app.put('/update/profile/:profileId', authenticateJWT, async (req, res) => {
   }
 });
 
+app.get('/ingredients', async (req, res) => {
+  try {
+    const ingredients = await db.any('SELECT * FROM ingredients ORDER BY food_label');
+    res.status(200).json(ingredients);
+  } catch (error) {
+    console.error('Error fetching ingredients:', error);
+    res.status(500).json({ message: 'Failed to fetch ingredients' });
+  }
+});
+
 //for development only
 app.get('/initkey', async (req, res) => {
  
@@ -337,6 +347,56 @@ app.get('/initdb', async (req, res) => {
       res.status(200).json({ message: 'Users and profiles tables created successfully.' });  } catch (error) {
     console.error('Error creating table or saving secret:', error);
     res.status(500).json({ error: 'Database setup failed.' });
+  }
+});
+
+
+async function createIngredientsTable() {
+  const createIngredientsTableQuery = `
+    CREATE TABLE IF NOT EXISTS ingredients (
+      id SERIAL PRIMARY KEY,
+      food_label TEXT,
+      proteines_g REAL,
+      glucides_g REAL,
+      lipides_g REAL
+    );
+  `;
+  await db.none(createIngredientsTableQuery);
+}
+
+async function importIngredients() {
+  const filePath = path.resolve(__dirname, 'data', 'ingredients.xlsx');
+  const workbook = xlsx.readFile(filePath);
+  const sheet = workbook.Sheets[workbook.SheetNames[0]];
+  const rows = xlsx.utils.sheet_to_json(sheet);
+
+  const sanitize = (val) => (typeof val === 'string' ? parseFloat(val) : val);
+
+  return db.tx(async (t) => {
+    const insertQuery = `
+      INSERT INTO ingredients (food_label, proteines_g, glucides_g, lipides_g)
+      VALUES ($1, $2, $3, $4)
+    `;
+
+    for (const row of rows) {
+      await t.none(insertQuery, [
+        row.FOOD_LABEL,
+        sanitize(row.proteines_g),
+        sanitize(row.glucides_g),
+        sanitize(row.lipides_g),
+      ]);
+    }
+  });
+}
+
+app.post('/initdbing', async (req, res) => {
+  try {
+    await createIngredientsTable();
+    await importIngredients();
+    res.status(200).json({ message: 'Ingredients imported successfully!' });
+  } catch (error) {
+    console.error('Error importing ingredients:', error);
+    res.status(500).json({ message: 'Failed to import ingredients' });
   }
 });
 //route should never be accessed outside of development

@@ -5,13 +5,13 @@ import {
 import { Picker } from '@react-native-picker/picker';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import axiosInstance from './axiosInstance';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 
 export default function ProfileModify() {
   const router = useRouter();
-  const { profileId } = useLocalSearchParams();
-
-  const [loading, setLoading] = useState(true);
-  const [profile, setProfile] = useState<any>({
+  const [profileId, setProfileId] = useState<string | null>(null);
+  const [profile, setProfile] = useState({
     profileName: '',
     age: '',
     gender: '',
@@ -21,8 +21,27 @@ export default function ProfileModify() {
     objective: 'gain weight',
     diet: 'vegan',
   });
+  const handleChange = (key: string, value: string) => {
+    setProfile(prev => ({ ...prev, [key]: value }));
+  };
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const loadProfileId = async () => {
+      const storedProfileId = await AsyncStorage.getItem('profileId');
+      if (storedProfileId) {
+        setProfileId(storedProfileId);
+      } else {
+        Alert.alert('Error', 'No profile ID found.');
+        router.push('/home');
+      }
+    };
+    loadProfileId();
+  }, []);
+  
+  useEffect(() => {
+    if (!profileId) return;
+  
     const fetchProfile = async () => {
       try {
         const response = await axiosInstance.get(`/get/profile/${profileId}`);
@@ -43,15 +62,15 @@ export default function ProfileModify() {
         setLoading(false);
       }
     };
-
-    if (profileId) fetchProfile();
+  
+    fetchProfile();
   }, [profileId]);
-
-  const handleChange = (key: string, value: string) => {
-    setProfile(prev => ({ ...prev, [key]: value }));
-  };
-
+  
   const handleSubmit = async () => {
+    if (!profileId) {
+      Alert.alert('Error', 'Profile ID is missing');
+      return;
+    }
     try {
       await axiosInstance.put(`/update/profile/${profileId}`, {
         profileName: profile.profileName,
@@ -63,7 +82,7 @@ export default function ProfileModify() {
         objective: profile.objective,
         diet: profile.diet,
       });
-
+  
       Alert.alert('Success', 'Profile updated successfully!');
       router.back();
     } catch (error) {
@@ -163,10 +182,17 @@ export default function ProfileModify() {
 
 const styles = StyleSheet.create({
   container: { padding: 20 },
-  center: { flex: 1, justifyContent: 'center' },
-  label: { fontWeight: 'bold', marginTop: 15 },
+  center: { 
+    flex: 1, 
+    justifyContent: 'center' },
+  label: { 
+    fontWeight: 'bold', 
+    marginTop: 15 },
   input: {
-    borderWidth: 1, borderColor: '#ccc', padding: 10,
-    borderRadius: 6, marginTop: 5,
+    borderWidth: 1, 
+    borderColor: '#ccc', 
+    padding: 10,
+    borderRadius: 6, 
+    marginTop: 5,
   },
 });
