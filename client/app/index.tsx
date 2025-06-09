@@ -1,34 +1,24 @@
-import React from 'react';
-import { Text, View, StyleSheet } from 'react-native';
-import { Link } from 'expo-router';
+import React from "react";
+import { Text, View } from "react-native";
+import { Link } from "expo-router";
+import globalStyle from "./styles/global";
+import homeStyle from "./styles/home";
 
-export default function Index() {
+const Index = () => {
   return (
-    <View style={styles.container}>
-      <Text style={styles.text}>Home screen</Text>
-      <Link href="/login" style={styles.button}>
-        login
-      </Link>
-      <Link href="/signup" style={styles.button}>
-        signup
-      </Link>
+    <View style={globalStyle.body}>
+      <Text style={globalStyle.mainTitle}>Food 4 Me</Text>
+      <Text style={homeStyle.catchPhrase}>Le guide nutritionnel au quotidien</Text>
+      <div style={homeStyle.authZone}>
+        <Link style={[globalStyle.link, homeStyle.authLink]} href="/login">
+          Connexion
+        </Link>
+        <Link style={[globalStyle.link, homeStyle.authLink]} href="/signup">
+          Inscription
+        </Link>
+      </div>
     </View>
   );
-}
+};
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#25292e',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  text: {
-    color: '#fff',
-  },
-  button: {
-    fontSize: 20,
-    textDecorationLine: 'underline',
-    color: '#fff',
-  },
-});
+export default Index;
