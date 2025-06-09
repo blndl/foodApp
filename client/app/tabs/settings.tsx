@@ -1,12 +1,56 @@
-import React from 'react';
-import { View, Text, Button, Alert, StyleSheet } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useState, useCallback } from 'react';
+import { View, Text, Button, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { useRouter, useFocusEffect } from 'expo-router';
 import axiosInstance from '../axiosInstance';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 
 
 export default function Settings() {
-  const { profileId } = useLocalSearchParams();
-  const router = useRouter();
+    const router = useRouter();
+    const [profileId, setProfileId] = useState<number | null>(null);
+    const [profile, setProfile] = useState<any>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+  
+    const fetchProfile = useCallback(async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const storedProfileId = await AsyncStorage.getItem('profileId');
+        if (!storedProfileId) {
+          Alert.alert('Error', 'No profile ID found. Please log in again.');
+          router.replace('/home');
+          return;
+        }
+        const parsedProfileId = parseInt(storedProfileId);
+        if (isNaN(parsedProfileId)) {
+          Alert.alert('Error', 'Invalid profile ID found. Please log in again.');
+          router.replace('/home');
+          return;
+        }
+        setProfileId(parsedProfileId);
+  
+        const response = await axiosInstance.get(`profiles/get/profile/${parsedProfileId}`);
+        if (response.status === 200) {
+          setProfile(response.data);
+        } else {
+          setError('Profile not found');
+        }
+      } catch (err) {
+        console.error('Error fetching profile:', err);
+        Alert.alert('Error', 'Failed to fetch profile data.');
+        setError('Failed to fetch profile data');
+      } finally {
+        setLoading(false);
+      }
+    }, [router]);
+  
+    useFocusEffect(
+      useCallback(() => {
+        fetchProfile();
+      }, [fetchProfile])
+    );
 
   const handleModifyProfile = () => {
     router.push({
@@ -14,32 +58,10 @@ export default function Settings() {
       params: { profileId }
     });
   };
-/*
-  const handleDeleteProfile = () => {
-    Alert.alert(
-      'Confirm Delete',
-      'Are you sure you want to delete your profile? This action cannot be undone.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Delete', style: 'destructive', onPress: () => {
-            onPress: async () => {
-                try {
-                  await axiosInstance.delete(`/profiles/${profileId}`);
-                  console.log('Profile deleted');
-                  router.push('/home');
-                } catch (error) {
-                  console.error('Failed to delete profile:', error);
-                  Alert.alert('Error', 'Failed to delete profile. Please try again.');
-                }
-            }
-        }},
-      ],
-      { cancelable: true }
-    );
-  };*/
+
   const handleDeleteProfile = async () => {
     try {
-      await axiosInstance.delete(`/delete/profile/${profileId}`);
+      await axiosInstance.delete(`/profiles/delete/profile/${profileId}`);
       console.log('Profile deleted');
       router.push('/home');
     } catch (error) {
@@ -47,8 +69,24 @@ export default function Settings() {
     }
   };
 
+  const handleLogout = async () => {
+    try {
+      await AsyncStorage.removeItem('profileId');
+      router.replace('/login');
+    } catch (error) {
+      console.error('Logout failed:', error);
+      Alert.alert('Error', 'Logout failed. Please try again.');
+    }
+  };
+
   return (
     <View style={styles.container}>
+        <View style={styles.header}>
+            <Text style={styles.title}>Hello, {profile?.profileName || 'User'}</Text>
+            <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
+                <Text style={styles.logoutText}>Logout</Text>
+            </TouchableOpacity>
+        </View>
       <Text style={styles.title}>Settings</Text>
 
       <Button title="Modify Profile" onPress={handleModifyProfile} />

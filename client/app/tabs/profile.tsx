@@ -29,7 +29,7 @@ export default function ProfilePage() {
       }
       setProfileId(parsedProfileId);
 
-      const response = await axiosInstance.get(`get/profile/${parsedProfileId}`);
+      const response = await axiosInstance.get(`profiles/get/profile/${parsedProfileId}`);
       if (response.status === 200) {
         setProfile(response.data);
       } else {
@@ -43,7 +43,7 @@ export default function ProfilePage() {
       setLoading(false);
     }
   }, [router]);
-  
+
   useFocusEffect(
     useCallback(() => {
       fetchProfile();
@@ -100,14 +100,25 @@ export default function ProfilePage() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, backgroundColor: '#fff' },
+  container: { 
+    flex: 1, 
+    padding: 20, 
+    backgroundColor: '#fff' },
   header: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center',
     marginBottom: 20,
   },
-  title: { fontSize: 24, fontWeight: 'bold' },
+  title: { 
+    fontSize: 24, 
+    fontWeight: 'bold' },
   logoutButton: {
-    padding: 10, backgroundColor: '#dc3545', borderRadius: 5,
+    padding: 10, 
+    backgroundColor: '#dc3545', 
+    borderRadius: 5,
   },
-  logoutText: { color: '#fff', fontWeight: 'bold' },
+  logoutText: { 
+    color: '#fff', 
+    fontWeight: 'bold' },
 });

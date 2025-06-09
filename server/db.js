@@ -8,13 +8,4 @@ const db = pgp({
   password: 'password' 
 });
 
-async function createDatabaseIfNotExists() {
-    try {
-      await db.none(`CREATE DATABASE IF NOT EXISTS userdb;`);
-      console.log("Database created successfully (if it didn't already exist).");
-    } catch (error) {
-      console.error("Error creating database:", error);
-    }
-  }
-
-  module.exports = db
+module.exports = db

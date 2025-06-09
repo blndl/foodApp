@@ -15,12 +15,12 @@ export default function ProfileSignup() {
 
       if (!userId) {
         Alert.alert('Error', 'User not logged in');
-        router.push("/login")
+        router.replace("/login")
         return;
       }
       console.log("avant")
 
-      const response = await axiosInstance.post('/newProfile', {
+      const response = await axiosInstance.post('/profiles/newProfile', {
         ...data,
         userId: parseInt(userId),
       });

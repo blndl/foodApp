@@ -16,7 +16,7 @@ export default function Login() {
     try {
       console.log('Login form data:', data);
 
-      const response = await axios.post('http://localhost:8080/login', data);
+      const response = await axios.post('http://localhost:8080/auth/login', data);
       console.log('Login response:', response.data);
 
       const { accessToken, refreshToken, userId } = response.data;

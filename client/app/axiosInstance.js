@@ -33,18 +33,19 @@ axiosInstance.interceptors.response.use(
       }
 
       try {
-        const refreshResponse = await axios.post('http://localhost:8080/refresh-token', { refreshToken: refreshToken });
-        const { accessToken, refreshtoken } = refreshResponse.data;
-
-        await AsyncStorage.setItem('accessToken', accessToken);
-        await AsyncStorage.setItem('refreshToken', refreshToken);
-
-        originalRequest.headers['Authorization'] = `Bearer ${accessToken}`;
+        const refreshResponse = await axios.post('http://localhost:8080/refresh-token', { refreshToken });
+        const { accessToken: newAccessToken, refreshToken: newRefreshToken } = refreshResponse.data;
+      
+        await AsyncStorage.setItem('accessToken', newAccessToken);
+        await AsyncStorage.setItem('refreshToken', newRefreshToken);
+      
+        originalRequest.headers['Authorization'] = `Bearer ${newAccessToken}`;
         return axiosInstance(originalRequest);
       } catch (refreshError) {
         console.error('Token refresh failed:', refreshError);
         return Promise.reject(refreshError);
       }
+      
     }
     return Promise.reject(error);
   }

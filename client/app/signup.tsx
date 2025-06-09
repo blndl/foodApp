@@ -13,7 +13,7 @@ export default function Signup() {
   const onSubmit = async (data: any) => {
     try {
       console.log('Sending signup request:', data);
-      const response = await /*api*/axios.post('http://localhost:8080/signup', data);
+      const response = await /*api*/axios.post('http://localhost:8080/auth/signup', data);
 
 
       console.log('Response status:', response.status);

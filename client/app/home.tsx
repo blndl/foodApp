@@ -24,7 +24,7 @@ export default function Home() {
   
         setUserId(parseInt(storedUserId));
   
-        const response = await axiosInstance.get(`get/profiles/${storedUserId}`, {
+        const response = await axiosInstance.get(`profiles/get/profiles/${storedUserId}`, {
           headers: {
             Authorization: `Bearer ${storedToken}`,
           },

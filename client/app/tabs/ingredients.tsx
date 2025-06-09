@@ -13,7 +13,7 @@ export default function IngredientListPage() {
     setLoading(true);
     setError(null);
     try {
-      const response = await axiosInstance.get('/ingredients');
+      const response = await axiosInstance.get('/ingredients/ingredients');
       setIngredients(response.data);
     } catch (err) {
       console.error('Error fetching ingredients:', err);
@@ -33,9 +33,10 @@ export default function IngredientListPage() {
   const renderItem = ({ item }) => (
     <View style={styles.item}>
       <Text style={styles.label}>{item.food_label}</Text>
-      <Text>Proteins: {item.proteines_g}g</Text>
-      <Text>Carbs: {item.glucides_g}g</Text>
-      <Text>Fats: {item.lipides_g}g</Text>
+      <Text>Proteins/g: {item.proteines_g}g</Text>
+      <Text>Carbs/g: {item.glucides_g}g</Text>
+      <Text>Fats/g: {item.lipides_g}g</Text>
+      <Text>Energy/kj: {item.nrj_kj}kj</Text>
     </View>
   );
 
