@@ -27,6 +27,16 @@ const globalStyle = StyleSheet.create({
   text: {
     color: colors.darkGreen,
   },
+
+  peachShadow: {
+    boxShadow: "5px 5px 0 0" + colors.peach,
+  },
+  lightGreenText: {
+    color: colors.lightGreen,
+  },
+  darkGreenText: {
+    color: colors.darkGreen,
+  },
 });
 
 export default globalStyle;
