@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, Button, StyleSheet, ScrollView, TouchableOpacity, Alert } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, Alert } from "react-native";
 import { useRouter } from "expo-router";
-import axiosInstance from "./axiosInstance";
+import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import axiosInstance from "./axiosInstance";
+
 import globalStyle from "./styles/global";
 import profileStyle from "./styles/profileList";
-import { Ionicons } from "@expo/vector-icons";
 
 export default function Home() {
   const [profiles, setProfiles] = useState<any[]>([]);

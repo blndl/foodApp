@@ -5,12 +5,15 @@ const formStyle = StyleSheet.create({
   authForm: {
     padding: 20,
   },
+  createProfileForm: {
+    padding: 20,
+  },
 
   label: {
     color: colors.darkGreen,
     paddingLeft: 16,
     // fontWeight: "bold",
-    fontSize: baseFontSize * 1.2,
+    fontSize: baseFontSize,
     marginBottom: 4,
   },
   inputBloc: {
