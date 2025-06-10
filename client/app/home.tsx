@@ -4,13 +4,11 @@ import { useRouter } from "expo-router";
 import axiosInstance from "./axiosInstance";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import globalStyle from "./styles/global";
-import profileStyle from "./styles/profile";
+import profileStyle from "./styles/profileList";
 import { Ionicons } from "@expo/vector-icons";
 
 export default function Home() {
   const [profiles, setProfiles] = useState<any[]>([]);
-  const [userId, setUserId] = useState<number | null>(null);
-  const [email, setEmail] = useState<string | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -24,8 +22,6 @@ export default function Home() {
           return;
         }
 
-        setUserId(parseInt(storedUserId));
-
         const response = await axiosInstance.get(`profiles/get/profiles/${storedUserId}`, {
           headers: {
             Authorization: `Bearer ${storedToken}`,
@@ -33,7 +29,6 @@ export default function Home() {
         });
 
         if (response.status === 200) {
-          setEmail(response.data.email);
           setProfiles(response.data.profiles);
         }
       } catch (error) {
