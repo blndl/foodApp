@@ -71,7 +71,7 @@ const EditMealScreen: React.FC<Props> = ({ route }) => {
 
     try {
       setSaving(true);
-      await axiosInstance.put(`/meals//editmeal/${mealId}`, { name });
+      await axiosInstance.put(`/meals/editmeal/${mealId}`, { name });
       Alert.alert('Success', 'Meal updated successfully.', [
         {
           text: 'OK',

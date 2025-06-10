@@ -17,13 +17,8 @@ export default function Signup() {
   const router = useRouter();
   const onSubmit = async (data: any) => {
     try {
-<<<<<<< HEAD
       console.log('Sending signup request:', data);
       const response = await /*api*/axios.post('http://localhost:8080/auth/signup', data);
-=======
-      console.log("Sending signup request:", data);
-      const response = await /*api*/ axios.post("http://localhost:8080/signup", data);
->>>>>>> 4bbc652258fb9de44b03ba1cb079f4708baa83b2
 
       console.log("Response status:", response.status);
       console.log("Response data:", response.data);

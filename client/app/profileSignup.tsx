@@ -102,6 +102,7 @@ export default function ProfileSignup() {
           rules={{ required: true }}
           render={({ field: { onChange, value } }) => (
             <Picker selectedValue={value} onValueChange={onChange} style={styles.input}>
+              <Picker.Item label="Select activity level" value="" />
               <Picker.Item label="None" value="none" />
               <Picker.Item label="A bit" value="a bit" />
               <Picker.Item label="A lot" value="a lot" />
@@ -118,6 +119,7 @@ export default function ProfileSignup() {
           rules={{ required: true }}
           render={({ field: { onChange, value } }) => (
             <Picker selectedValue={value} onValueChange={onChange} style={styles.input}>
+              <Picker.Item label="Select objective" value="" />
               <Picker.Item label="Gain Weight" value="gain weight" />
               <Picker.Item label="Lose Weight" value="lose weight" />
               <Picker.Item label="Gain Muscle Mass" value="gain muscle mass" />
@@ -134,6 +136,7 @@ export default function ProfileSignup() {
           rules={{ required: true }}
           render={({ field: { onChange, value } }) => (
             <Picker selectedValue={value} onValueChange={onChange} style={styles.input}>
+              <Picker.Item label="Select diet" value="" />
               <Picker.Item label="Vegan" value="vegan" />
               <Picker.Item label="Vegetarian" value="vegetarian" />
               <Picker.Item label="Non-Vegetarian" value="non-vegetarian" />
