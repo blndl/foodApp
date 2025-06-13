@@ -13,13 +13,17 @@ export default function Home() {
   const router = useRouter();
 
   useEffect(() => {
+    let isMounted = true;
+
     const checkAuthAndFetch = async () => {
       try {
         const storedUserId = await AsyncStorage.getItem("userId");
         const storedToken = await AsyncStorage.getItem("accessToken");
 
         if (!storedUserId || !storedToken) {
-          router.replace("/login");
+          if (isMounted) {
+            router.replace("./");
+          }
           return;
         }
 
@@ -29,17 +33,23 @@ export default function Home() {
           },
         });
 
-        if (response.status === 200) {
+        if (isMounted && response.status === 200) {
           setProfiles(response.data.profiles);
         }
       } catch (error) {
         console.error("Error fetching profiles:", error);
-        Alert.alert("Error", "Failed to fetch profiles.");
-        router.replace("/login");
+        if (isMounted) {
+          Alert.alert("Error", "Failed to fetch profiles.");
+          router.replace("./");
+        }
       }
     };
 
     checkAuthAndFetch();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const handleLogout = async () => {
@@ -48,7 +58,7 @@ export default function Home() {
       await AsyncStorage.removeItem("accessToken");
       await AsyncStorage.removeItem("refreshToken");
       Alert.alert("Logged out", "You have been logged out.");
-      router.replace("/login");
+      router.replace("./");
     } catch (error) {
       console.error("Logout failed:", error);
       Alert.alert("Error", "Failed to logout. Please try again.");
@@ -59,7 +69,7 @@ export default function Home() {
     try {
       await AsyncStorage.setItem("profileId", profileId.toString());
       console.log("Profile ID stored:", profileId);
-      router.push("/tabs/profile");
+      router.push("./");
     } catch (error) {
       console.error("Failed to store profile ID:", error);
       Alert.alert("Error", "Could not store profile ID. Please try again.");
@@ -82,23 +92,45 @@ export default function Home() {
           >
             <Ionicons
               name="fast-food"
-              style={[profileStyle.profileIcon, globalStyle.lightGreenText, globalStyle.peachShadow]}
+              style={[
+                profileStyle.profileIcon,
+                globalStyle.lightGreenText,
+                globalStyle.peachShadow,
+              ]}
             />
-            <Text style={[profileStyle.profileName, globalStyle.darkGreenText]}>{profile.profileName}</Text>
+            <Text style={[profileStyle.profileName, globalStyle.darkGreenText]}>
+              {profile.profileName}
+            </Text>
           </TouchableOpacity>
         ))}
 
         <TouchableOpacity style={[profileStyle.profile]} onPress={handleCreateProfile}>
           <Ionicons
             name="add"
-            style={[profileStyle.profileIcon, globalStyle.darkGreenText, profileStyle.addProfileBtn]}
+            style={[
+              profileStyle.profileIcon,
+              globalStyle.darkGreenText,
+              profileStyle.addProfileBtn,
+            ]}
           />
           <Text style={[profileStyle.profileName, globalStyle.darkGreenText]}>Nouveau</Text>
         </TouchableOpacity>
       </ScrollView>
-      <TouchableOpacity onPress={handleLogout}>
-        <Text>Logout</Text>
-      </TouchableOpacity>
+
+      <TouchableOpacity
+        onPress={handleLogout}
+        style={{
+          marginTop: 30,
+          paddingVertical: 12,
+          paddingHorizontal: 24,
+          backgroundColor: '#4CAF50',
+          borderRadius: 8,
+          alignSelf: 'center',
+          }}
+        >
+  <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>Logout</Text>
+</TouchableOpacity>
+
     </View>
   );
 }

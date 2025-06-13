@@ -41,7 +41,7 @@ const AppNavigator = () => {
         </>
       ) : !profileSelected ? (
         <>
-          <Stack.Screen name="Home" component={Home} />
+          <Stack.Screen name="Index" component={Index} />
         </>
       ) : (
         <>

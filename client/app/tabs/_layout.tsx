@@ -28,7 +28,6 @@ const TabsLayout = () => (
       tabBarIcon: ({ focused, color, size }) => {
         let iconName = '';
         if (route.name === 'Profile') iconName = focused ? 'person' : 'person-outline';
-        else if (route.name === 'Ingredients') iconName = focused ? 'fish' : 'fish-outline';
         else if (route.name === 'Meals') iconName = focused ? 'restaurant' : 'restaurant-outline';
         else if (route.name === 'Settings') iconName = focused ? 'settings' : 'settings-outline';
 
@@ -37,7 +36,6 @@ const TabsLayout = () => (
     })}
   >
     <Tab.Screen name="Profile" component={Profile} />
-    <Tab.Screen name="Ingredients" component={Ingredients} />
     <Tab.Screen name="Meals" component={MealsStackScreen} />
     <Tab.Screen name="Settings" component={Settings} />
   </Tab.Navigator>

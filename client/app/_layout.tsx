@@ -3,19 +3,20 @@ import React, { useEffect, useState } from "react";
 import * as Font from "expo-font";
 
 export default function RootLayout() {
-  // Import fonts
   const [fontsLoaded, setFontsLoaded] = useState(false);
+
   useEffect(() => {
     async function loadFonts() {
       await Font.loadAsync({
-        Pacifico: require("@/assets/fonts/Pacifico.ttf"), // Assurez-vous que le chemin est correct
-        SourGummy: require("@/assets/fonts/SourGummy.ttf"), // Assurez-vous que le chemin est correct
+        Pacifico: require("@/assets/fonts/Pacifico.ttf"),
+        SourGummy: require("@/assets/fonts/SourGummy.ttf"),
       });
       setFontsLoaded(true);
     }
 
     loadFonts();
-  });
+  }, [])
+
   return (
     <Stack>
       <Stack.Screen name="index" options={{ title: "Index", headerShown: false }} />

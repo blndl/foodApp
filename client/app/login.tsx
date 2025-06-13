@@ -40,7 +40,7 @@ export default function Login() {
       console.log("Refresh Token saved:", refreshToken);
       console.log("User ID saved:", userId);
 
-      router.push("/home");
+      router.push("./home");
     } catch (error: any) {
       console.error("Login error:", error?.response?.data || error.message);
       Alert.alert("Login Failed", "Invalid credentials or server error");
