@@ -14,7 +14,7 @@ export default function NotFoundScreen() {
       const profileId = await AsyncStorage.getItem('profileId');
 
       if (userId && profileId) {
-        router.replace('/tabs/profile');
+        router.replace('./');
       } else if (userId && !profileId) {
         router.replace('/home');
       } else {

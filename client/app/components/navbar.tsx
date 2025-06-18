@@ -1,21 +1,32 @@
 import React from 'react';
 import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, usePathname } from 'expo-router';
 
 export default function Navbar() {
   const router = useRouter();
+  const pathname = usePathname();
+
+  const links = [
+    { label: 'Profil', path: '/' },
+    { label: 'Repas', path: '/meals' },
+    { label: 'Paramètres', path: '/settings' },
+  ];
 
   return (
     <View style={styles.navbar}>
-      <TouchableOpacity onPress={() => router.push('/tabs/profile')}>
-        <Text style={styles.navLink}>Profil</Text>
-      </TouchableOpacity>
-      <TouchableOpacity onPress={() => router.push('/tabs/meals')}>
-        <Text style={styles.navLink}>Repas</Text>
-      </TouchableOpacity>
-      <TouchableOpacity onPress={() => router.push('/tabs/settings')}>
-        <Text style={styles.navLink}>Paramètres</Text>
-      </TouchableOpacity>
+      {links.map((link) => {
+        const isActive = link.label === 'Repas'
+          ? pathname.startsWith(link.path)
+          : pathname === link.path;
+
+        return (
+          <TouchableOpacity key={link.path} onPress={() => router.push(link.path)}>
+            <Text style={[styles.navLink, isActive && styles.activeLink]}>
+              {link.label}
+            </Text>
+          </TouchableOpacity>
+        );
+      })}
     </View>
   );
 }
@@ -33,5 +44,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#2e7d32',
     fontWeight: '600',
+  },
+  activeLink: {
+    textDecorationLine: 'underline',
+    color: '#1b5e20',
   },
 });

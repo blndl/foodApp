@@ -5,18 +5,18 @@ import {
   StyleSheet,
   FlatList,
   TouchableOpacity,
+  SafeAreaView,
+  Modal,
+  ScrollView,
+  Pressable,
 } from 'react-native';
-import { Picker } from '@react-native-picker/picker';
-import axiosInstance from '../../axiosInstance';
-import { CompositeNavigationProp, useNavigation } from '@react-navigation/native';
+import axiosInstance from '../axiosInstance';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
+import { useNavigation } from '@react-navigation/native';
 import { MealsStackParamList } from './_layout';
-import { TabParamList } from '../_layout';
+import Navbar from '../components/navbar';
 
 type MealsStackNavProp = NativeStackNavigationProp<MealsStackParamList, 'MealsList'>;
-type TabNavProp = BottomTabNavigationProp<TabParamList, 'Meals'>;
-type NavigationProp = CompositeNavigationProp<MealsStackNavProp, TabNavProp>;
 
 interface Ingredient {
   ingredient_id: number;
@@ -49,12 +49,15 @@ interface Meal {
 }
 
 const MealsListScreen = () => {
-  const navigation = useNavigation<NavigationProp>();
+  const navigation = useNavigation<MealsStackNavProp>();
   const [meals, setMeals] = useState<Meal[]>([]);
   const [filteredMeals, setFilteredMeals] = useState<Meal[]>([]);
   const [sortAsc, setSortAsc] = useState(true);
   const [ingredients, setIngredients] = useState<string[]>([]);
   const [filterIngredient, setFilterIngredient] = useState('');
+
+  const [modalVisible, setModalVisible] = useState(false);
+  const [selectedMeal, setSelectedMeal] = useState<Meal | null>(null);
 
   useEffect(() => {
     fetchMeals();
@@ -153,32 +156,97 @@ const MealsListScreen = () => {
     setFilteredMeals(data);
   };
 
+  const openMealModal = (meal: Meal) => {
+    setSelectedMeal(meal);
+    setModalVisible(true);
+  };
+
+  const closeMealModal = () => {
+    setSelectedMeal(null);
+    setModalVisible(false);
+  };
+
+  const goToEditMeal = (mealId: number) => {
+    navigation.navigate('EditMeal', { mealId });
+  };
+
+  const deleteMeal = async (meal_id: number) => {
+    try {
+      await axiosInstance.delete(`/meals/${meal_id}`);
+      setMeals(prevMeals => prevMeals.filter(meal => meal.meal_id !== meal_id));
+    } catch (err) {
+      console.error('Failed to delete meal:', err);
+    }
+  };
+
   const renderMeal = ({ item }: { item: Meal }) => (
     <View style={styles.card}>
-      <Text style={styles.mealName}>{item.name}</Text>
-      <Text style={styles.details}>By: {item.profileName}</Text>
+      <TouchableOpacity
+        style={styles.mealButton}
+        onPress={() => openMealModal(item)}
+      >
+        <View style={{ flex: 1 }}>
+          <Text style={styles.mealName}>{item.name}</Text>
+          <Text style={styles.details}>By: {item.profileName}</Text>
+        </View>
+
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <TouchableOpacity
+            style={styles.deleteButton}
+            onPress={() => deleteMeal(item.meal_id)}
+          >
+            <Text style={styles.deleteButtonText}>Delete</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.editButton}
+            onPress={() => goToEditMeal(item.meal_id)}
+          >
+            <Text style={styles.editButtonText}>Edit</Text>
+          </TouchableOpacity>
+        </View>
+      </TouchableOpacity>
     </View>
   );
 
+  const renderModalContent = () => {
+    if (!selectedMeal) return null;
+
+    return (
+      <View>
+        <Text style={styles.modalTitle}>{selectedMeal.name}</Text>
+        <Text style={{ marginBottom: 8, fontStyle: 'italic' }}>By: {selectedMeal.profileName}</Text>
+        <Text>Calories: {selectedMeal.calories}</Text>
+        <Text>Proteins: {selectedMeal.total_proteines}g</Text>
+        <Text>Carbs: {selectedMeal.total_glucides}g</Text>
+        <Text>Fats: {selectedMeal.total_lipides}g</Text>
+        <Text>Energy (kJ): {selectedMeal.total_energy_kj}</Text>
+
+        <Text style={{ marginTop: 10, fontWeight: 'bold' }}>Ingredients:</Text>
+        {selectedMeal.ingredients.map((ing) => (
+          <Text key={ing.ingredient_id} style={{ marginLeft: 10 }}>
+            - {ing.food_label} ({ing.quantity}g)
+          </Text>
+        ))}
+      </View>
+    );
+  };
+
   return (
-    <View style={styles.container}>
-      <View style={styles.buttonRow}>
+    <SafeAreaView style={styles.container}>
+      <View style={styles.topNavbar}>
         <TouchableOpacity
-          style={[styles.halfButton, { backgroundColor: '#17a2b8' }]}
-          onPress={() =>
-            navigation.navigate('Meals', {
-              screen: 'MyMeals',
-            })
-          }
+          style={[styles.navButton, { backgroundColor: '#6f42c1' }]}
+          onPress={() => navigation.navigate('MealsList')}
         >
-          <Text style={styles.createButtonText}>My Meals</Text>
+          <Text style={styles.navButtonText}>All Meals</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.halfButton, { backgroundColor: '#28a745' }]}
+          style={[styles.navButton, { backgroundColor: '#28a745' }]}
           onPress={() => navigation.navigate('CreateMeal')}
         >
-          <Text style={styles.createButtonText}>+ Create Meal</Text>
+          <Text style={styles.navButtonText}>+ Create Meal</Text>
         </TouchableOpacity>
       </View>
 
@@ -186,25 +254,45 @@ const MealsListScreen = () => {
         data={filteredMeals}
         keyExtractor={(item) => item.meal_id.toString()}
         renderItem={renderMeal}
+        contentContainerStyle={{ paddingBottom: 80 }}
       />
-    </View>
+
+      <Navbar />
+
+      <Modal
+        visible={modalVisible}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={closeMealModal}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <ScrollView>{renderModalContent()}</ScrollView>
+            <Pressable onPress={closeMealModal} style={styles.modalClose}>
+              <Text style={{ color: 'white' }}>Close</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, backgroundColor: '#fff' },
-  buttonRow: {
+  container: { flex: 1, backgroundColor: '#fff' },
+  topNavbar: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginBottom: 16,
+    paddingHorizontal: 16,
   },
-  halfButton: {
+  navButton: {
     flex: 0.48,
     padding: 12,
     borderRadius: 8,
     alignItems: 'center',
   },
-  createButtonText: {
+  navButtonText: {
     color: '#fff',
     fontWeight: 'bold',
     fontSize: 16,
@@ -213,9 +301,14 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#ddd',
     borderRadius: 8,
-    padding: 16,
-    marginBottom: 12,
+    marginHorizontal: 16,
+    marginVertical: 8,
     backgroundColor: '#fafafa',
+  },
+  mealButton: {
+    flexDirection: 'row',
+    padding: 16,
+    alignItems: 'center',
   },
   mealName: {
     fontSize: 18,
@@ -224,6 +317,52 @@ const styles = StyleSheet.create({
   details: {
     fontSize: 14,
     color: '#555',
+  },
+  editButton: {
+    backgroundColor: '#007bff',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 6,
+    marginLeft: 10,
+  },
+  editButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  deleteButton: {
+    backgroundColor: '#dc3545',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 6,
+    marginRight: 10,
+  },
+  deleteButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    padding: 20,
+  },
+  modalContainer: {
+    backgroundColor: 'white',
+    borderRadius: 10,
+    padding: 20,
+    maxHeight: '80%',
+  },
+  modalTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  modalClose: {
+    marginTop: 20,
+    backgroundColor: '#2196F3',
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
   },
 });
 

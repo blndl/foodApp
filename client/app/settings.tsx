@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { View, Text, Button, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
-import axiosInstance from '../axiosInstance';
+import axiosInstance from './axiosInstance';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 
@@ -20,13 +20,13 @@ export default function Settings() {
         const storedProfileId = await AsyncStorage.getItem('profileId');
         if (!storedProfileId) {
           Alert.alert('Error', 'No profile ID found. Please log in again.');
-          router.replace('/home');
+          router.replace('../');
           return;
         }
         const parsedProfileId = parseInt(storedProfileId);
         if (isNaN(parsedProfileId)) {
           Alert.alert('Error', 'Invalid profile ID found. Please log in again.');
-          router.replace('/home');
+          router.replace('../');
           return;
         }
         setProfileId(parsedProfileId);
@@ -72,7 +72,7 @@ export default function Settings() {
   const handleLogout = async () => {
     try {
       await AsyncStorage.removeItem('profileId');
-      router.replace('/login');
+      router.replace('/home');
     } catch (error) {
       console.error('Logout failed:', error);
       Alert.alert('Error', 'Logout failed. Please try again.');

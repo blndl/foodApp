@@ -7,10 +7,9 @@ import Login from './login';
 import Signup from './signup';
 import Home from './home';
 
-import TabsLayout from './tabs/_layout';
-import CreateMealScreen from './tabs/meals/createmeal';
-import MealsListScreen from './tabs/meals';
-import MyMealsByProfileScreen from './tabs/meals/listmeal';
+import CreateMealScreen from './meals/createmeal';
+import MealsListScreen from './meals';
+import MyMealsByProfileScreen from './meals';
 
 const Stack = createNativeStackNavigator();
 
@@ -45,7 +44,6 @@ const AppNavigator = () => {
         </>
       ) : (
         <>
-          <Stack.Screen name="Tabs" component={TabsLayout} />
           <Stack.Screen name="CreateMeal" component={CreateMealScreen} />
           <Stack.Screen name="MyMeals" component={MyMealsByProfileScreen} />
         </>

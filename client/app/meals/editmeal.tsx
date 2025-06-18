@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { RouteProp, useNavigation } from '@react-navigation/native';
 import { MealsStackParamList } from './_layout';
-import axiosInstance from '../../axiosInstance';
+import axiosInstance from '../axiosInstance';
 
 type EditMealScreenRouteProp = RouteProp<MealsStackParamList, 'EditMeal'>;
 
@@ -50,7 +50,7 @@ const EditMealScreen: React.FC<Props> = ({ route }) => {
     const fetchMeal = async () => {
       try {
         setLoading(true);
-        const res = await axiosInstance.get(`/meals/${mealId}`);
+        const res = await axiosInstance.get(`/showmealby/${mealId}`);
         setMeal(res.data);
         setName(res.data.name);
       } catch (error) {
@@ -132,6 +132,7 @@ const EditMealScreen: React.FC<Props> = ({ route }) => {
         />
       </View>
     </ScrollView>
+    
   );
 };
 

@@ -7,10 +7,15 @@ import {
   TextInput,
   TouchableOpacity,
   ActivityIndicator,
+  Modal,
+  Pressable,
+  ScrollView,
 } from 'react-native';
 
 function IngredientMealSearchFilter({ ingredients, meals, loading, error, onRetry }) {
   const [filterText, setFilterText] = useState('');
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [modalVisible, setModalVisible] = useState(false);
 
   const filterItems = () => {
     const query = filterText.toLowerCase();
@@ -51,28 +56,44 @@ function IngredientMealSearchFilter({ ingredients, meals, loading, error, onRetr
 
   const combinedFilteredItems = filterItems();
 
+  const handleItemPress = (item) => {
+    setSelectedItem(item);
+    setModalVisible(true);
+  };
+
   const renderItem = ({ item }) => {
-    if (item.type === 'ingredient') {
+    const label = item.type === 'ingredient' ? item.food_label : item.name;
+    const type = item.type === 'ingredient' ? 'Ingredient' : 'Meal';
+
+    return (
+      <TouchableOpacity style={styles.itemButton} onPress={() => handleItemPress(item)}>
+        <Text style={styles.label}>
+          {label} <Text style={styles.typeLabel}>({type})</Text>
+        </Text>
+      </TouchableOpacity>
+    );
+  };
+
+  const renderModalContent = () => {
+    if (!selectedItem) return null;
+
+    if (selectedItem.type === 'ingredient') {
       return (
-        <View style={styles.item}>
-          <Text style={styles.label}>
-            {item.food_label} <Text style={styles.typeLabel}>(Ingredient)</Text>
-          </Text>
-          <Text>Proteins/g: {item.proteines_g}g</Text>
-          <Text>Carbs/g: {item.glucides_g}g</Text>
-          <Text>Fats/g: {item.lipides_g}g</Text>
-          <Text>Fibers/g: {item.fibers_g}g</Text>
-          <Text>Energy/kj: {item.nrj_kj}kj</Text>
+        <View>
+          <Text style={styles.modalTitle}>{selectedItem.food_label} (Ingredient)</Text>
+          <Text>Proteins/g: {selectedItem.proteines_g}g</Text>
+          <Text>Carbs/g: {selectedItem.glucides_g}g</Text>
+          <Text>Fats/g: {selectedItem.lipides_g}g</Text>
+          <Text>Fibers/g: {selectedItem.fibers_g}g</Text>
+          <Text>Energy/kj: {selectedItem.nrj_kj}kj</Text>
         </View>
       );
-    } else if (item.type === 'meal') {
+    } else if (selectedItem.type === 'meal') {
       return (
-        <View style={styles.item}>
-          <Text style={styles.label}>
-            {item.name} <Text style={styles.typeLabel}>(Meal)</Text>
-          </Text>
+        <View>
+          <Text style={styles.modalTitle}>{selectedItem.name} (Meal)</Text>
           <Text>Ingredients:</Text>
-          {item.ingredients.map((ing) => (
+          {selectedItem.ingredients.map((ing) => (
             <Text key={ing.id} style={{ marginLeft: 10 }}>
               - {ing.food_label} ({ing.quantity}g)
             </Text>
@@ -80,6 +101,7 @@ function IngredientMealSearchFilter({ ingredients, meals, loading, error, onRetr
         </View>
       );
     }
+
     return null;
   };
 
@@ -115,9 +137,7 @@ function IngredientMealSearchFilter({ ingredients, meals, loading, error, onRetr
         <FlatList
           data={combinedFilteredItems}
           keyExtractor={(item) =>
-            item.type === 'ingredient'
-              ? `ingredient-${item.id}`
-              : `meal-${item.id}`
+            item.type === 'ingredient' ? `ingredient-${item.id}` : `meal-${item.id}`
           }
           renderItem={renderItem}
           contentContainerStyle={{ paddingBottom: 100 }}
@@ -125,6 +145,17 @@ function IngredientMealSearchFilter({ ingredients, meals, loading, error, onRetr
       ) : (
         <Text style={styles.noResult}>No matching ingredients or meals.</Text>
       )}
+
+      <Modal visible={modalVisible} transparent={true} animationType="slide">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <ScrollView>{renderModalContent()}</ScrollView>
+            <Pressable onPress={() => setModalVisible(false)} style={styles.modalClose}>
+              <Text style={{ color: 'white' }}>Close</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -136,8 +167,9 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 10,
     marginBottom: 20,
+    marginHorizontal: 10,
   },
-  item: {
+  itemButton: {
     padding: 15,
     borderBottomColor: '#eee',
     borderBottomWidth: 1,
@@ -160,6 +192,31 @@ const styles = StyleSheet.create({
     color: '#888',
     fontStyle: 'italic',
     marginTop: 20,
+    textAlign: 'center',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    padding: 20,
+  },
+  modalContainer: {
+    backgroundColor: 'white',
+    borderRadius: 10,
+    padding: 20,
+    maxHeight: '80%',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  modalClose: {
+    marginTop: 20,
+    backgroundColor: '#2196F3',
+    padding: 10,
+    borderRadius: 8,
+    alignItems: 'center',
   },
 });
 
