@@ -14,6 +14,7 @@ const createIngredientsTable = async () => {
       proteines_g REAL,
       glucides_g REAL,
       lipides_g REAL,
+      fibres_g REAL,
       nrj_kj REAL
     );
   `;
@@ -39,65 +40,79 @@ const importIngredients = async () => {
   await db.tx(async t => {
     for (const row of filteredData) {
       await t.none(
-        `INSERT INTO ingredients (food_label, proteines_g, glucides_g, lipides_g, nrj_kj)
-         VALUES ($1, $2, $3, $4, $5)`,
-        [row.FOOD_LABEL, sanitize(row.proteines_g), sanitize(row.glucides_g), sanitize(row.lipides_g), sanitize(row.nrj_kj)]
+        `INSERT INTO ingredients (food_label, proteines_g, glucides_g, lipides_g,fibres_g, nrj_kj)
+         VALUES ($1, $2, $3, $4, $5, $6)`,
+        [row.FOOD_LABEL, sanitize(row.proteines_g), sanitize(row.glucides_g), 
+            sanitize(row.lipides_g), sanitize(row.fibres_g), sanitize(row.nrj_kj)]
       );
     }
   });
 };
 
 router.get('/initdb', async (req, res) => {
-  const createUserTableQuery = `
-    CREATE TABLE IF NOT EXISTS users (
-      id SERIAL PRIMARY KEY,
-      email TEXT NOT NULL UNIQUE,
-      password TEXT NOT NULL
-    );
-  `;
-  const createProfileTableQuery = `
-    CREATE TABLE IF NOT EXISTS profiles (
-      id SERIAL PRIMARY KEY,
-      "userId" INTEGER REFERENCES users(id) ON DELETE CASCADE,
-      "profileName" TEXT,
-      age INTEGER,
-      gender TEXT,
-      height DECIMAL(5, 2),
-      weight DECIMAL(5, 2),
-      "activityLevel" TEXT,
-      objective TEXT,
-      diet TEXT
-    );
-  `;
-  const createMealsTableQuery = `
-    CREATE TABLE IF NOT EXISTS meals (
-      id SERIAL PRIMARY KEY,
-      "profileId" INTEGER REFERENCES profiles(id) ON DELETE CASCADE,
-      name TEXT NOT NULL,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-  `;
-  const createMealIngredientsTableQuery = `
-    CREATE TABLE IF NOT EXISTS meal_ingredients (
-      id SERIAL PRIMARY KEY,
-      "mealId" INTEGER REFERENCES meals(id) ON DELETE CASCADE,
-      "ingredientId" INTEGER REFERENCES ingredients(id),
-      quantity REAL
-    );
-  `;
-
-  try {
-    await db.none(createUserTableQuery);
-    await db.none(createProfileTableQuery);
-    await db.none(createMealsTableQuery);
-    await db.none(createMealIngredientsTableQuery);
-
-    res.status(200).json({ message: 'DB initialized' });
-  } catch (error) {
-    console.error('DB init error:', error);
-    res.status(500).json({ message: 'Database init failed' });
-  }
-});
+    const createUserTableQuery = `
+      CREATE TABLE IF NOT EXISTS users (
+        id SERIAL PRIMARY KEY,
+        email TEXT NOT NULL UNIQUE,
+        password TEXT NOT NULL
+      );
+    `;
+    const createProfileTableQuery = `
+      CREATE TABLE IF NOT EXISTS profiles (
+        id SERIAL PRIMARY KEY,
+        "userId" INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        "profileName" TEXT,
+        age INTEGER,
+        gender TEXT,
+        height DECIMAL(5, 2),
+        weight DECIMAL(5, 2),
+        "activityLevel" TEXT,
+        objective TEXT,
+        diet TEXT
+      );
+    `;
+    const createMealsTableQuery = `
+      CREATE TABLE IF NOT EXISTS meals (
+        id SERIAL PRIMARY KEY,
+        "profileId" INTEGER REFERENCES profiles(id) ON DELETE CASCADE,
+        name TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `;
+    const createMealIngredientsTableQuery = `
+      CREATE TABLE IF NOT EXISTS meal_ingredients (
+        id SERIAL PRIMARY KEY,
+        "mealId" INTEGER REFERENCES meals(id) ON DELETE CASCADE,
+        "ingredientId" INTEGER REFERENCES ingredients(id),
+        quantity REAL
+      );
+    `;
+  
+    const createMealsEatenTableQuery = `
+      CREATE TABLE IF NOT EXISTS meals_eaten (
+        id SERIAL PRIMARY KEY,
+        "profileId" INTEGER REFERENCES profiles(id) ON DELETE CASCADE,
+        "mealId" INTEGER REFERENCES meals(id) ON DELETE CASCADE,
+        day INTEGER NOT NULL,
+        month INTEGER NOT NULL,
+        eaten_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `;
+  
+    try {
+      await db.none(createUserTableQuery);
+      await db.none(createProfileTableQuery);
+      await db.none(createMealsTableQuery);
+      await db.none(createMealIngredientsTableQuery);
+      await db.none(createMealsEatenTableQuery);
+  
+      res.status(200).json({ message: 'DB initialized' });
+    } catch (error) {
+      console.error('DB init error:', error);
+      res.status(500).json({ message: 'Database init failed' });
+    }
+  });
+  
 
 router.post('/initdbing', async (req, res) => {
   console.log('/initdbing called');

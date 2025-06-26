@@ -8,8 +8,8 @@ import {
   StyleSheet,
   Alert,
   TouchableOpacity,
+  Keyboard,
 } from 'react-native';
-import { Picker } from '@react-native-picker/picker';
 import axiosInstance from '../axiosInstance';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -26,7 +26,9 @@ interface MealIngredient {
 
 const CreateMealScreen: React.FC = () => {
   const [ingredientsList, setIngredientsList] = useState<Ingredient[]>([]);
-  const [selectedIngredient, setSelectedIngredient] = useState<string>('');
+  const [searchTerm, setSearchTerm] = useState<string>('');
+  const [filteredIngredients, setFilteredIngredients] = useState<Ingredient[]>([]);
+  const [selectedIngredient, setSelectedIngredient] = useState<Ingredient | null>(null);
   const [quantity, setQuantity] = useState<string>('');
   const [mealName, setMealName] = useState<string>('');
   const [mealIngredients, setMealIngredients] = useState<MealIngredient[]>([]);
@@ -34,12 +36,22 @@ const CreateMealScreen: React.FC = () => {
   useEffect(() => {
     axiosInstance
       .get('/ingredients/ingredients')
-      .then((res) => setIngredientsList(res.data))
+      .then((res) => {
+        setIngredientsList(res.data);
+        setFilteredIngredients(res.data);
+      })
       .catch((err) => {
         console.error('Failed to load ingredients:', err);
         Alert.alert('Error', 'Could not load ingredients');
       });
   }, []);
+
+  useEffect(() => {
+    const filtered = ingredientsList.filter((ingredient) =>
+      ingredient.food_label.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    setFilteredIngredients(filtered);
+  }, [searchTerm, ingredientsList]);
 
   const addIngredient = () => {
     if (!selectedIngredient) {
@@ -51,18 +63,19 @@ const CreateMealScreen: React.FC = () => {
       return;
     }
 
-    const ingredientIdNum = Number(selectedIngredient);
-
-    const ingredientName =
-      ingredientsList.find((i) => i.id === ingredientIdNum)?.food_label || 'Unknown';
-
     setMealIngredients((prev) => [
       ...prev,
-      { ingredientId: selectedIngredient, quantity: Number(quantity), name: ingredientName },
+      {
+        ingredientId: selectedIngredient.id.toString(),
+        quantity: Number(quantity),
+        name: selectedIngredient.food_label,
+      },
     ]);
 
-    setSelectedIngredient('');
+    setSelectedIngredient(null);
+    setSearchTerm('');
     setQuantity('');
+    Keyboard.dismiss();
   };
 
   const deleteIngredient = (index: number) => {
@@ -81,12 +94,12 @@ const CreateMealScreen: React.FC = () => {
 
     try {
       const profileId = await AsyncStorage.getItem('profileId');
-  
+
       if (!profileId) {
         Alert.alert('Error', 'User profile ID not found. Please log in again.');
         return;
       }
-  
+
       await axiosInstance.post('/meals/meals', {
         name: mealName,
         profileId,
@@ -95,6 +108,7 @@ const CreateMealScreen: React.FC = () => {
           quantity,
         })),
       });
+
       Alert.alert('Success', 'Meal created successfully');
       setMealName('');
       setMealIngredients([]);
@@ -114,23 +128,36 @@ const CreateMealScreen: React.FC = () => {
         placeholder="Enter meal name"
       />
 
-      <Text style={styles.label}>Select Ingredient</Text>
-      <Picker
-        selectedValue={selectedIngredient}
-        onValueChange={(itemValue) => setSelectedIngredient(itemValue)}
-        style={styles.picker}
-      >
-        <Picker.Item label="-- Select Ingredient --" value="" />
-        {ingredientsList.map((ingredient) => (
-          <Picker.Item
-            key={ingredient.id}
-            label={ingredient.food_label}
-            value={ingredient.id.toString()}
-          />
-        ))}
-      </Picker>
+      <Text style={styles.label}>Search Ingredient</Text>
+      <TextInput
+        style={styles.input}
+        value={searchTerm}
+        onChangeText={setSearchTerm}
+        placeholder="Type to search ingredients"
+      />
 
-      <Text style={styles.label}>Quantity</Text>
+      {searchTerm.length > 0 && !selectedIngredient && (
+        <FlatList
+          data={filteredIngredients}
+          keyExtractor={(item) => item.id.toString()}
+          style={styles.dropdown}
+          keyboardShouldPersistTaps="handled"
+          renderItem={({ item }) => (
+            <TouchableOpacity
+              style={styles.dropdownItem}
+              onPress={() => {
+                setSelectedIngredient(item);
+                setSearchTerm(item.food_label);
+                Keyboard.dismiss();
+              }}
+            >
+              <Text>{item.food_label}</Text>
+            </TouchableOpacity>
+          )}
+        />
+      )}
+
+      <Text style={styles.label}>Quantity (in grams)</Text>
       <TextInput
         style={styles.input}
         value={quantity}
@@ -152,12 +179,11 @@ const CreateMealScreen: React.FC = () => {
           renderItem={({ item, index }) => (
             <View style={styles.ingredientRow}>
               <Text style={styles.ingredientText}>
-                {item.name} - {item.quantity}
+                {item.name} - {item.quantity}g
               </Text>
               <TouchableOpacity
                 onPress={() => deleteIngredient(index)}
                 style={styles.deleteButton}
-                activeOpacity={0.7}
               >
                 <Text style={styles.deleteButtonText}>Delete</Text>
               </TouchableOpacity>
@@ -190,8 +216,17 @@ const styles = StyleSheet.create({
     padding: 8,
     marginTop: 8,
   },
-  picker: {
-    marginTop: 8,
+  dropdown: {
+    maxHeight: 150,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    marginTop: 4,
+    borderRadius: 5,
+  },
+  dropdownItem: {
+    padding: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
   },
   ingredientRow: {
     flexDirection: 'row',

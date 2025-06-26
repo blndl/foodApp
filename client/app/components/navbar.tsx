@@ -9,6 +9,7 @@ export default function Navbar() {
   const links = [
     { label: 'Profil', path: '/' },
     { label: 'Repas', path: '/meals' },
+    { label: 'Régime', path: '/diet' },
     { label: 'Paramètres', path: '/settings' },
   ];
 

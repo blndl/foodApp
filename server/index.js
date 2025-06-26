@@ -14,7 +14,7 @@ const mealRoutes = require('./routes/meals');
 const ingredientRoutes = require('./routes/ingredients');
 const devRoutes = require('./routes/dev');*/
 
-let authRoutes, profileRoutes, mealRoutes, ingredientRoutes, devRoutes;
+let authRoutes, profileRoutes, mealRoutes, ingredientRoutes, devRoutes, dietRoutes;
 
 try {
   authRoutes = require('./routes/auth');
@@ -50,13 +50,19 @@ try {
 } catch (e) {
   console.error(' Failed to load dev:', e);
 }
+try {
+  dietRoutes = require('./routes/diet');
+  console.log(' Loaded diet');
+} catch (e) {
+  console.error(' Failed to load diet:', e);
+}
 
 
 app.use('/auth', authRoutes);
 app.use('/profiles', profileRoutes);
 app.use('/meals', mealRoutes);
 app.use('/ingredients', ingredientRoutes);
-
+app.use('/diet', dietRoutes);
 // dev
 app.use('/dev', devRoutes);
 

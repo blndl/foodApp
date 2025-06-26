@@ -1,23 +1,21 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ActivityIndicator,
   TouchableOpacity,
-  Alert,
+  ScrollView,
 } from 'react-native';
-import { useRouter, useFocusEffect, Link } from 'expo-router';
+import { useRouter, Link } from 'expo-router';
 import axiosInstance from './axiosInstance';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import IngredientMealSearchFilter from './components/MISearch';
-import axios from 'axios';
-
 import Navbar from './components/navbar';
 import globalStyle from './styles/global';
 import homeStyle from './styles/home';
 
-function groupMealsWithIngredients(flatMeals: any[]) {
+function groupMealsWithIngredients(flatMeals) {
   const mealsMap = new Map();
 
   flatMeals.forEach((row) => {
@@ -30,9 +28,7 @@ function groupMealsWithIngredients(flatMeals: any[]) {
       });
     }
 
-    const meal = mealsMap.get(row.meal_id);
-
-    meal.ingredients.push({
+    mealsMap.get(row.meal_id).ingredients.push({
       id: row.ingredient_id,
       food_label: row.food_label,
       quantity: row.quantity,
@@ -40,9 +36,6 @@ function groupMealsWithIngredients(flatMeals: any[]) {
       glucides_g: row.glucides_g,
       lipides_g: row.lipides_g,
       nrj_kj: row.nrj_kj,
-      proteines_total: row.proteines_total,
-      glucides_total: row.glucides_total,
-      lipides_total: row.lipides_total,
       energy_total_kj: row.energy_total_kj,
     });
   });
@@ -53,107 +46,168 @@ function groupMealsWithIngredients(flatMeals: any[]) {
 export default function ProfilePage() {
   const router = useRouter();
 
-  const [profile, setProfile] = useState<any>(null);
+  const [profile, setProfile] = useState(null);
   const [loadingProfile, setLoadingProfile] = useState(true);
-  const [profileError, setProfileError] = useState<string | null>(null);
-  const [calories, setCalories] = useState<number | null>(null);
-  const [dri, setDri] = useState<any>(null);
+  const [profileError, setProfileError] = useState(null);
+  const [calories, setCalories] = useState(null);
+  const [dri, setDri] = useState(null);
+  const [eatenCalories, setEatenCalories] = useState({
+    kcal: 0,
+    protein: 0,
+    carbs: 0,
+    fats: 0,
+  });
 
   const [ingredients, setIngredients] = useState([]);
   const [meals, setMeals] = useState([]);
   const [loadingSearch, setLoadingSearch] = useState(true);
-  const [searchError, setSearchError] = useState<string | null>(null);
+  const [searchError, setSearchError] = useState(null);
+  const [randomMeal, setRandomMeal] = useState(null);
 
-  const fetchProfile = useCallback(async () => {
-    setLoadingProfile(true);
-    setProfileError(null);
-
-    try {
-      const storedProfileId = await AsyncStorage.getItem('profileId');
-      if (!storedProfileId) {
-        setProfile(null);
-        setLoadingProfile(false);
-        return;
-      }
-
-      const parsedProfileId = parseInt(storedProfileId);
-      if (isNaN(parsedProfileId)) {
-        setProfile(null);
-        setLoadingProfile(false);
-        return;
-      }
-
-      const response = await axiosInstance.get(`profiles/get/profile/${parsedProfileId}`);
-
-      setProfile(response.data);
-      calculateDRI(response.data);
-    } catch (err: any) {
-      console.error('Error fetching profile:', err);
-
-      if (err.response && err.response.status === 404) {
-        setProfileError('Profile not found. Please select or create a profile.');
-      } else {
-        setProfileError('Failed to fetch profile data');
-      }
-
-      setProfile(null);
-    } finally {
-      setLoadingProfile(false);
+  const calculateDRI = (profileData) => {
+    if (!profileData) {
+      setDri({
+        kcal: 2000,
+        protein: 50,
+        carbs: 260,
+        fats: 70,
+      });
+      return;
     }
-  }, []);
 
-  const calculateDRI = (profileData: any) => {
     const { weight, activityLevel } = profileData;
-
     let multiplier = 30;
     if (activityLevel === 'a bit') multiplier = 25;
     else if (activityLevel === 'a lot') multiplier = 30;
     else if (activityLevel === 'professional level') multiplier = 35;
 
     const weightKg = parseFloat(weight);
-    const estimatedCalories = weightKg * multiplier;
+    const estimatedKcal = Math.round(weightKg * multiplier);
+    const estimatedProtein = Math.round(weightKg * 1.2);
+    const estimatedCarbs = Math.round(weightKg * 4);
+    const estimatedFats = Math.round(weightKg * 1);
 
-    setCalories(estimatedCalories);
-
-    const proteinGrams = [estimatedCalories * 0.10 / 4, estimatedCalories * 0.30 / 4];
-    const fatGrams = [estimatedCalories * 0.20 / 9, estimatedCalories * 0.35 / 9];
-    const carbsGrams = [estimatedCalories * 0.45 / 4, estimatedCalories * 0.65 / 4];
-    const waterLiters = estimatedCalories / 1000;
-    const fiberGrams = (estimatedCalories / 1000) * 14;
-
+    setCalories(estimatedKcal);
     setDri({
-      protein: proteinGrams.map((v) => v.toFixed(1)),
-      fat: fatGrams.map((v) => v.toFixed(1)),
-      carbs: carbsGrams.map((v) => v.toFixed(1)),
-      water: waterLiters.toFixed(2),
-      fiber: fiberGrams.toFixed(1),
+      kcal: estimatedKcal,
+      protein: estimatedProtein,
+      carbs: estimatedCarbs,
+      fats: estimatedFats,
     });
   };
+
+  const fetchProfile = useCallback(async () => {
+    setLoadingProfile(true);
+    setProfileError(null);
+    try {
+      const storedProfileId = await AsyncStorage.getItem('profileId');
+      if (storedProfileId) {
+        const parsedId = parseInt(storedProfileId);
+        const response = await axiosInstance.get(`profiles/get/profile/${parsedId}`);
+        const data = response.data;
+        setProfile(data);
+        calculateDRI(data);
+      } else {
+        calculateDRI(null);
+      }
+    } catch (err) {
+      console.error('Error fetching profile:', err);
+      setProfileError('Could not load profile.');
+      setProfile(null);
+      calculateDRI(null);
+    } finally {
+      setLoadingProfile(false);
+    }
+  }, []);
+
+  const fetchEatenMealsToday = useCallback(async () => {
+    if (!profile) return;
+
+    try {
+      const profileId = await AsyncStorage.getItem('profileId');
+      if (!profileId) return;
+
+      const today = new Date();
+      const day = today.getDate();
+      const month = today.getMonth() + 1;
+
+      const { data } = await axiosInstance.get(`/diet/mealseaten/${profileId}/${day}/${month}`);
+
+      let totalKcal = 0;
+      let totalProtein = 0;
+      let totalCarbs = 0;
+      let totalFats = 0;
+
+      data.forEach((meal) => {
+        if (!meal.ingredients) return;
+
+        meal.ingredients.forEach((ing) => {
+          const qty = Number(ing.quantity) || 0;
+          const factor = qty / 100;
+
+          const kj = ing.energy_total_kj ?? ing.nrj_kj ?? 0;
+          totalKcal += (kj * factor) / 4.184;
+
+          totalProtein += (ing.proteines_g || 0) * factor;
+          totalCarbs += (ing.glucides_g || 0) * factor;
+          totalFats += (ing.lipides_g || 0) * factor;
+        });
+      });
+
+      setEatenCalories({
+        kcal: Math.round(totalKcal),
+        protein: Math.round(totalProtein),
+        carbs: Math.round(totalCarbs),
+        fats: Math.round(totalFats),
+      });
+    } catch (err) {
+      console.error('Failed to fetch eaten meals:', err);
+    }
+  }, [profile]);
 
   const fetchIngredientsAndMeals = useCallback(async () => {
     setLoadingSearch(true);
     setSearchError(null);
     try {
-      const [ingredientsRes, mealsRes] = await Promise.all([
+      const [ingRes, mealRes] = await Promise.all([
         axiosInstance.get('/ingredients/ingredients'),
         axiosInstance.get('/meals/listmeals'),
       ]);
-      setIngredients(ingredientsRes.data);
-      setMeals(groupMealsWithIngredients(mealsRes.data));
+      setIngredients(ingRes.data);
+      setMeals(groupMealsWithIngredients(mealRes.data));
+
+      if (eatenCalories.kcal < calories) {
+        const randomMealIndex = Math.floor(Math.random() * mealRes.data.length);
+        setRandomMeal(mealRes.data[randomMealIndex]);
+        console.log('Random meal selected:', mealRes.data[randomMealIndex]);  // Log random meal
+      } else {
+        setRandomMeal(null);
+        console.log('No suggestion needed, eaten calories >= recommended kcal');
+      }
     } catch (err) {
       console.error('Error fetching ingredients/meals:', err);
       setSearchError('Failed to load ingredients and meals.');
     } finally {
       setLoadingSearch(false);
     }
-  }, []);
+  }, [eatenCalories, calories]);
 
-  useFocusEffect(
-    useCallback(() => {
-      fetchProfile();
-      fetchIngredientsAndMeals();
-    }, [fetchProfile, fetchIngredientsAndMeals])
-  );
+  useEffect(() => {
+    fetchProfile();
+    fetchIngredientsAndMeals();
+  }, []); 
+
+  useEffect(() => {
+    if (profile) {
+      fetchEatenMealsToday();
+    }
+  }, [profile]);
+
+  useEffect(() => {
+    if (profile) {
+      calculateDRI(profile);
+    }
+  }, [eatenCalories, profile]);
 
   const handleLogout = async () => {
     try {
@@ -188,25 +242,38 @@ export default function ProfilePage() {
 
           <Text>Age: {profile.age}</Text>
           <Text>Gender: {profile.gender}</Text>
-          <Text>Height: {profile.height}</Text>
-          <Text>Weight: {profile.weight}</Text>
+          <Text>Weight: {profile.weight} kg</Text>
           <Text>Activity Level: {profile.activityLevel}</Text>
           <Text>Objective: {profile.objective}</Text>
           <Text>Diet: {profile.diet}</Text>
 
-          <View style={{ marginTop: 30 }}>
-            <Text style={{ fontSize: 18, fontWeight: 'bold' }}>Recommended Daily Intake:</Text>
-            {calories && <Text>Estimated Calories: {Math.round(calories)} kcal/day</Text>}
-            {dri && (
-              <>
-                <Text>Protein: {dri.protein[0]} – {dri.protein[1]} g</Text>
-                <Text>Fat: {dri.fat[0]} – {dri.fat[1]} g</Text>
-                <Text>Carbohydrates: {dri.carbs[0]} – {dri.carbs[1]} g</Text>
-                <Text>Water: {dri.water} L</Text>
-                <Text>Fiber: {dri.fiber} g</Text>
-              </>
-            )}
-          </View>
+          {dri && (
+            <View style={{ marginTop: 30 }}>
+              <Text style={{ fontSize: 18, fontWeight: 'bold' }}>Daily Intake Summary</Text>
+              <Text style={{ marginTop: 8 }}>
+                Calories: {eatenCalories.kcal} kcal / {dri.kcal} kcal
+              </Text>
+              <Text>Protein: {eatenCalories.protein} g / {dri.protein} g</Text>
+              <Text>Carbs: {eatenCalories.carbs} g / {dri.carbs} g</Text>
+              <Text>Fats: {eatenCalories.fats} g / {dri.fats} g</Text>
+            </View>
+          )}
+
+          {eatenCalories.kcal < dri.kcal && randomMeal && (
+            <View style={styles.suggestionContainer}>
+              <Text style={styles.suggestionTitle}>Suggested Meal</Text>
+              <Text style={styles.suggestionText}>{randomMeal?.meal_name}</Text>
+              {randomMeal?.ingredients && randomMeal.ingredients.map((ingredient, idx) => (
+                <View key={idx} style={styles.ingredient}>
+                  <Text>{ingredient.food_label}: {ingredient.quantity}g</Text>
+                  <Text>Protein: {ingredient.proteines_g}g</Text>
+                  <Text>Carbs: {ingredient.glucides_g}g</Text>
+                  <Text>Fats: {ingredient.lipides_g}g</Text>
+                  <Text>Energy: {ingredient.energy_total_kj} kJ</Text>
+                </View>
+              ))}
+            </View>
+          )}
         </>
       ) : (
         <>
@@ -238,26 +305,15 @@ export default function ProfilePage() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 20,
-    backgroundColor: '#fff',
-  },
-  centered: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
+  container: { flex: 1, padding: 20, backgroundColor: '#fff' },
+  centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 20,
   },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-  },
+  title: { fontSize: 24, fontWeight: 'bold' },
   logoutButton: {
     padding: 10,
     backgroundColor: '#2e7d32',
@@ -266,5 +322,23 @@ const styles = StyleSheet.create({
   logoutText: {
     color: '#fff',
     fontWeight: 'bold',
+  },
+  suggestionContainer: {
+    marginTop: 20,
+    padding: 10,
+    backgroundColor: '#f7f7f7',
+    borderRadius: 5,
+  },
+  suggestionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  suggestionText: {
+    fontSize: 16,
+    marginBottom: 5,
+  },
+  ingredient: {
+    marginBottom: 10,
   },
 });
